@@ -2,6 +2,10 @@
 import numpy as np
 import scipy as sp
 import networkx as nx
+import bct
+from scipy.spatial import distance
+import pandas as pd
+
 
 """
 beta could be 0.5 or -0.5
@@ -17,11 +21,13 @@ def bonachic_centrality_und(CIJ, beta=0.5):
     p = np.transpose(b)
     return p
 
+
+
 """
 betweenness_wei
 """
-def betweenness_wei(G):
-    n = len(G)
+def betweenness_wei(w):
+    n = len(w)
     BC = np.zeros((n,))  # vertex betweenness
 
     for u in range(n):
@@ -34,7 +40,7 @@ def betweenness_wei(G):
         Q = np.zeros((n,), dtype=int)  # indices
         q = n - 1  # order of non-increasing distance
 
-        G1 = G.copy()
+        G1 = w.copy()
         V = [u]
         while True:
             S[V] = 0  # distance u->V is now permanent
@@ -68,122 +74,7 @@ def betweenness_wei(G):
                 DP[v] += (1 + DP[w]) * NP[v] / NP[w]
 
     return BC
-    
-def flow_coef_bd(matrix):
-    '''
-    The flow coefficient
-    is similar to betweenness centrality, but works on a local
-    neighborhood. It is mathematically related to the clustering
-    coefficient  (cc) at each node as, fc+cc <= 1.
+  
 
-    Parameters
-    ----------
-    CIJ : NxN np.ndarray
-        binary directed connection matrix
 
-    Returns
-    -------
-    fc : Nx1 np.ndarray
-        flow coefficient for each node
-    FC : float
-        average flow coefficient over the network
-    total_flo : int
-        number of paths that "flow" across the central node
-    '''
-    N = len(matrix)
-
-    fc = np.zeros((N,))
-    total_flo = np.zeros((N,))
-    max_flo = np.zeros((N,))
-
-    # loop over nodes
-    for v in range(N):
-        # find neighbors - note: both incoming and outgoing connections
-        nb, = np.where(matrix[v, :] + matrix[:, v].T)
-        fc[v] = 0
-        if np.where(nb)[0].size:
-            matrixflo = -matrix[np.ix_(nb, nb)]
-            for i in range(len(nb)):
-                for j in range(len(nb)):
-                    if matrix[nb[i], v] and matrix[v, nb[j]]:
-                        matrixflo[i, j] += 1
-            total_flo[v] = np.sum(
-                (matrixflo == 1) * np.logical_not(np.eye(len(nb))))
-            max_flo[v] = len(nb) * len(nb) - len(nb)
-            fc[v] = total_flo[v] / max_flo[v]
-
-    fc[np.isnan(fc)] = 0
-    FC = np.mean(fc)
-
-    return fc, FC, total_flo
-
-def pagerank(G, alpha=0.85, personalization=None, 
-             max_iter=100, tol=1.0e-6, nstart=None, weight='weight', 
-             dangling=None): 
-    if len(G) == 0: 
-        return {} 
-  
-    if not G.is_directed(): 
-        D = G.to_directed() 
-    else: 
-        D = G 
-  
-    # Create a copy in (right) stochastic form 
-    W = nx.stochastic_graph(D, weight=weight) 
-    N = W.number_of_nodes() 
-  
-    # Choose fixed starting vector if not given 
-    if nstart is None: 
-        x = dict.fromkeys(W, 1.0 / N) 
-    else: 
-        # Normalized nstart vector 
-        s = float(sum(nstart.values())) 
-        x = dict((k, v / s) for k, v in nstart.items()) 
-  
-    if personalization is None: 
-  
-        # Assign uniform personalization vector if not given 
-        p = dict.fromkeys(W, 1.0 / N) 
-    else: 
-        missing = set(G) - set(personalization) 
-        if missing: 
-            raise NetworkXError('Personalization dictionary '
-                                'must have a value for every node. '
-                                'Missing nodes %s' % missing) 
-        s = float(sum(personalization.values())) 
-        p = dict((k, v / s) for k, v in personalization.items()) 
-  
-    if dangling is None: 
-  
-        # Use personalization vector if dangling vector not specified 
-        dangling_weights = p 
-    else: 
-        missing = set(G) - set(dangling) 
-        if missing: 
-            raise NetworkXError('Dangling node dictionary '
-                                'must have a value for every node. '
-                                'Missing nodes %s' % missing) 
-        s = float(sum(dangling.values())) 
-        dangling_weights = dict((k, v/s) for k, v in dangling.items()) 
-    dangling_nodes = [n for n in W if W.out_degree(n, weight=weight) == 0.0] 
-  
-    # power iteration: make up to max_iter iterations 
-    for _ in range(max_iter): 
-        xlast = x 
-        x = dict.fromkeys(xlast.keys(), 0) 
-        danglesum = alpha * sum(xlast[n] for n in dangling_nodes) 
-        for n in x: 
-  
-            # this matrix multiply looks odd because it is 
-            # doing a left multiply x^T=xlast^T*W 
-            for nbr in W[n]: 
-                x[nbr] += alpha * xlast[n] * W[n][nbr][weight] 
-            x[n] += danglesum * dangling_weights[n] + (1.0 - alpha) * p[n] 
-  
-        # check convergence, l1 norm 
-        err = sum([abs(x[n] - xlast[n]) for n in x]) 
-        if err < N*tol: 
-            return x 
-    raise NetworkXError('pagerank: power iteration failed to converge '
-                        'in %d iterations.' % max_iter)
 

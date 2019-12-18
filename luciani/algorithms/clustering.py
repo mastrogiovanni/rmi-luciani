@@ -1,28 +1,39 @@
-##clustering_coef_wu(W)
+
 
 import numpy as np
 import scipy as sc
 import pandas as pd
 
-def clustering_coef_wu(W):
-    '''
-    The weighted clustering coefficient is the average "intensity" of
-    triangles around a node.
+#binarize
+def binarize(w, copy=True):
+    
+    if copy:
+        w = w.copy()
+    w[w != 0] = 1
+    return w
 
-    Parameters
-    ----------
-    W : NxN np.ndarray
-        weighted undirected connection matrix
+#get_components
+def get_components(w, no_depend=False):
 
-    Returns
-    -------
-    C : Nx1 np.ndarray
-        clustering coefficient vector
-    '''
-    K = np.array(np.sum(np.logical_not(W == 0), axis=1), dtype=float)
-    ws = np.cbrt(W)
-    cyc3 = np.diag(np.dot(ws, np.dot(ws, ws)))
-    K[np.where(cyc3 == 0)] = np.inf  # if no 3-cycles exist, set C=0
-    C = cyc3 / (K * (K - 1))
-    return C
+    w = binarize(w, copy=True)
+    n = len(w)
+    np.fill_diagonal(w, 1)
 
+    edge_map = [{u,v} for u in range(n) for v in range(n) if w[u,v] == 1]
+    union_sets = []
+    for item in edge_map:
+        temp = []
+        for s in union_sets:
+
+            if not s.isdisjoint(item):
+                item = s.union(item)
+            else:
+                temp.append(s)
+        temp.append(item)
+        union_sets = temp
+
+    comps = np.array([i+1 for v in range(n) for i in 
+        range(len(union_sets)) if v in union_sets[i]])
+    comp_sizes = np.array([len(s) for s in union_sets])
+
+    return comps, comp_sizes
