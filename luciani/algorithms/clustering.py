@@ -5,8 +5,7 @@ import scipy as sc
 import pandas as pd
 
 #binarize
-def binarize(w, copy=True):
-    
+def binarize(w, copy=True):    
     if copy:
         w = w.copy()
     w[w != 0] = 1

@@ -91,8 +91,8 @@ def edge_nei_overlap_bd(CIJ):
     ik, jk = np.where(CIJ)
     lel = len(CIJ[ik, jk])
     n = len(CIJ)
-
-    _, _, deg = degrees_dir(CIJ)
+    
+    _, _, deg = bct.degrees_dir(CIJ)
 
     ec = np.zeros((lel,))
     degij = np.zeros((2, lel))

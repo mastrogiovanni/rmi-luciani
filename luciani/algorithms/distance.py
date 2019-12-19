@@ -3,6 +3,7 @@ import numpy as np
 import scipy as sc
 import pandas as pd
 import bct
+import networkx as nx
 
 """
 distance_wei_floyd
@@ -51,7 +52,21 @@ def distance_wei_floyd(adjacency, transform=None):
 
     return SPL, hops, Pmat
 
+"""
+retrieve_shortest_path
+"""
+def retrieve_shortest_path(s, t, hops, Pmat):
+  path_length = hops[s, t]
+  if path_length != 0:
+    path = np.zeros((int(path_length + 1), 1), dtype='int')
+    path[0] = s
+    for ind in range(1, len(path)):
+      s = Pmat[s, t]
+      path[ind] = s
+    else:
+      path = []
 
+    return path
 
 
 """
@@ -119,20 +134,37 @@ def search_information(adjacency, transform=None, has_memory=False):
                         SI[i, j] = np.inf
 
     return SI
-  
+
+"""
+distance_inv
+"""
+
+def distance_inv(g):
+	D = np.eye(len(g))
+	n = 1
+	nPATH = g.copy()
+	L = (nPATH != 0)
+	while np.any(L):
+		D += n * L
+		n += 1
+		nPATH = np.dot(nPATH,g)
+		L = (nPATH != 0) * (D == 0)
+	D[np.logical_not(D)] = np.inf
+	D = 1 / D
+	np.fill_diagonal(D, 0)
+	return D
 
 """
 vulnerability_index
 """
-def vulnerablity_index(w):
-  n = len(w)
-  e = distance_inv(w)
-  E = np.sum(e) / (n * n -n)
-  for i in range(1,64):
-    print(e[i])
-    Ei = np.sum(e[i]) / (n * n -n)
-    print(Ei)
-  Vi = np.divide(np.subtract(E,Ei),E)
-  return Vi
-
+def vulnerability_index(w):
+	n = len(w)
+	e = distance_inv(w)
+	G = nx.Graph(w)
+	E = nx.global_efficiency(G)
+	for i in range(1,64):
+		Ei = np.sum(e[i]) / (n * n - n)
+		print(Ei)
+	Vi = np.divide(np.subtract(E,Ei),E)
+	return Vi
 

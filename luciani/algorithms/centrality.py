@@ -21,13 +21,20 @@ def bonachic_centrality_und(CIJ, beta=0.5):
     p = np.transpose(b)
     return p
 
-
+"""
+binarize
+"""
+def binarize(w, copy=True):
+  if copy:
+    w = w.copy()
+  w[w != 0] = 1
+  return w
 
 """
 betweenness_wei
 """
-def betweenness_wei(w):
-    n = len(w)
+def betweenness_wei(G):
+    n = len(G)
     BC = np.zeros((n,))  # vertex betweenness
 
     for u in range(n):
@@ -40,7 +47,7 @@ def betweenness_wei(w):
         Q = np.zeros((n,), dtype=int)  # indices
         q = n - 1  # order of non-increasing distance
 
-        G1 = w.copy()
+        G1 = G.copy()
         V = [u]
         while True:
             S[V] = 0  # distance u->V is now permanent
